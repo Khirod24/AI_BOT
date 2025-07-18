@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GenAI Chatbot</title>
+   <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h2>💬 GenAI Chatbot</h2>
+
+  <form id="chat-form">
+    <textarea id="question" rows="3" placeholder="Type your question..."></textarea>
+    <button type="submit">Ask</button>
+  </form>
+
+  <div id="response"></div>
+
+  <h3>🕘 Chat History</h3>
+  <div id="history" class="chat-box"></div>
+
+  <script>
+    const form = document.getElementById("chat-form");
+    const questionInput = document.getElementById("question");
+    const responseDiv = document.getElementById("response");
+    const historyDiv = document.getElementById("history");
+
+    // Submit form
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = questionInput.value.trim();
+      if (!question) return;
+
+      // Send POST to /chat/
+      const res = await fetch("/api/chat/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+
+      const data = await res.json();
+      if (data.reply) {
+        responseDiv.innerHTML = `<p><strong>AI:</strong> ${data.reply}</p>`;
+        questionInput.value = "";
+        loadHistory();  // refresh history
+      } else {
+        responseDiv.innerHTML = `<p style="color:red">Error: ${data.error}</p>`;
+      }
+    });
+
+    // Load chat history
+    async function loadHistory() {
+      const res = await fetch("/api/history/");
+      const data = await res.json();
+      historyDiv.innerHTML = "";
+
+      data.chat_history.forEach((entry, i) => {
+        historyDiv.innerHTML += `
+          <div>
+            <p class="q">Q${i + 1}: ${entry.question}</p>
+            <p class="a">A: ${entry.answer}</p>
+          </div>
+        `;
+      });
+    }
+
+    // Load on page start
+    loadHistory();
+  </script>
+
+</body>
+</html>
